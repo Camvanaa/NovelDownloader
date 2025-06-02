@@ -1,0 +1,8 @@
+requests
+beautifulsoup4
+EbookLib==0.18
+
+# 建议固定版本号以保证环境一致性，例如：
+# requests==2.25.1
+# beautifulsoup4==4.9.3
+# EbookLib==0.18 
