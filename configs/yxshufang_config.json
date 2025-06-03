@@ -29,11 +29,11 @@
     },
 
     "chapter_splitting_enabled": false, 
-    "chapter_splitting_regex": "^(第[一二三四五六七八九十百千零〇\\d]+\\s*章\\s+.*)$",
+    "chapter_splitting_regex": "^(\\d+[）)].*?)$",
 
     "in_content_splitting": {
         "enabled": true,
-        "header_regex": "^(第[一二三四五六七八九十百千零〇\\d]+\\s*章\\s+[^\\n]+)$"
+        "header_regex": "^(\\d+[）)].*?)$"
     },
 
     "title_patterns": {

@@ -113,6 +113,9 @@ downloader.list_chapters("https://example.com/book/123")
 2. 建议设置适当的下载延迟，避免对目标网站造成压力
 3. 下载的内容仅供个人学习使用
 
+## 目前内置的配置
+- https://www.yxshufang.com/book/BLMN.html
+
 ## 许可证
 
 MIT License 
