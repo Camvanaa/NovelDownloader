@@ -156,88 +156,93 @@ class ExampleDownloader(BaseDownloader):
         # 1. 优先尝试内容内分割 (in-content splitting)
         if self.in_content_splitting_enabled and self.in_content_header_regex:
             logger.debug(f"章节 {chapter_index} - 尝试内容内分割，使用正则: {self.in_content_header_regex_str}")
-            parts = self.in_content_header_regex.split(full_content_block)
             
-            ics_sub_chapter_counter = 0
-            # 处理第一个标题之前的内容 (parts[0])
-            first_part_content = parts[0].strip()
-            if first_part_content:
-                # 如果这部分内容没有标题，它应该属于上一章
+            # 找到所有匹配的标题
+            matches = list(self.in_content_header_regex.finditer(full_content_block))
+            
+            # 如果没有找到任何标题，整个内容应该合并到前一章
+            if not matches:
+                logger.debug("未找到任何匹配的标题，尝试合并到前一章")
                 if self._last_chapter_info['title'] and self._last_chapter_info['path']:
-                    # 将内容追加到上一章
+                    # 将整个内容追加到上一章
                     with open(self._last_chapter_info['path'], 'a', encoding='utf-8') as f:
-                        f.write(f"\n\n{first_part_content}")
+                        f.write(f"\n\n{full_content_block.strip()}")
                     logger.info(f"将无标题内容合并到上一章: {self._last_chapter_info['title']}")
                     saved_any_file = True
+                    processed_by_in_content_splitting = True
                 else:
-                    # 如果没有上一章的信息，作为当前章节的一部分处理
-                    ics_sub_chapter_counter += 1
-                    main_part_title = effective_main_display_title 
-                    main_part_filename_title = self._clean_filename(f"{main_part_title}_p0")
-                    
-                    output_filename_main_part = f"{chapter_index:04d}_ics_{ics_sub_chapter_counter:03d}_{main_part_filename_title}.txt"
-                    output_filepath_main_part = os.path.join(base_output_path, output_filename_main_part)
-                    
-                    if self._save_chapter_content(main_part_title, first_part_content, output_filepath_main_part):
+                    logger.warning("没有前一章的信息，无法合并内容")
+            else:
+                logger.debug(f"找到 {len(matches)} 个匹配的标题")
+                
+                ics_sub_chapter_counter = 0
+                
+                # 处理第一个标题之前的内容
+                first_part_content = full_content_block[:matches[0].start()].strip()
+                if first_part_content:
+                    # 如果这部分内容没有标题，它应该属于上一章
+                    if self._last_chapter_info['title'] and self._last_chapter_info['path']:
+                        # 将内容追加到上一章
+                        with open(self._last_chapter_info['path'], 'a', encoding='utf-8') as f:
+                            f.write(f"\n\n{first_part_content}")
+                        logger.info(f"将无标题内容合并到上一章: {self._last_chapter_info['title']}")
                         saved_any_file = True
-                        processed_by_in_content_splitting = True
-
-            # 处理后续的标题和内容
-            current_title = None
-            current_content = []
-            
-            for i in range(1, len(parts), 2):
-                raw_ics_title = self._clean_text(parts[i])
-                cleaned_ics_title = self._get_cleaned_title(raw_ics_title)
-                
-                if (i + 1) < len(parts):
-                    content = parts[i+1].strip()
-                    if cleaned_ics_title:
-                        # 如果有之前累积的内容，先保存
-                        if current_title and current_content:
-                            ics_sub_chapter_counter += 1
-                            clean_title_for_file = self._clean_filename(current_title)
-                            output_filename = f"{chapter_index:04d}_ics_{ics_sub_chapter_counter:03d}_{clean_title_for_file}.txt"
-                            output_filepath = os.path.join(base_output_path, output_filename)
-                            
-                            if self._save_chapter_content(current_title, "\n\n".join(current_content), output_filepath):
-                                saved_any_file = True
-                                # 更新最后处理的章节信息
-                                self._last_chapter_info.update({
-                                    'index': chapter_index,
-                                    'title': current_title,
-                                    'path': output_filepath,
-                                    'pending_content': None
-                                })
-                        
-                        # 开始新的章节
-                        current_title = cleaned_ics_title
-                        current_content = [content]
                     else:
-                        # 如果没有标题，将内容添加到当前章节
-                        if current_content:
-                            current_content.append(content)
-                        else:
-                            # 如果还没有当前章节，这个内容应该属于上一章
-                            self._last_chapter_info['pending_content'] = content
+                        # 如果没有上一章的信息，作为当前章节的一部分处理
+                        ics_sub_chapter_counter += 1
+                        main_part_title = effective_main_display_title 
+                        main_part_filename_title = self._clean_filename(f"{main_part_title}_p0")
+                        
+                        output_filename_main_part = f"{chapter_index:04d}_ics_{ics_sub_chapter_counter:03d}_{main_part_filename_title}.txt"
+                        output_filepath_main_part = os.path.join(base_output_path, output_filename_main_part)
+                        
+                        if self._save_chapter_content(main_part_title, first_part_content, output_filepath_main_part):
+                            saved_any_file = True
+                            processed_by_in_content_splitting = True
 
-            # 保存最后一个章节
-            if current_title and current_content:
-                ics_sub_chapter_counter += 1
-                clean_title_for_file = self._clean_filename(current_title)
-                output_filename = f"{chapter_index:04d}_ics_{ics_sub_chapter_counter:03d}_{clean_title_for_file}.txt"
-                output_filepath = os.path.join(base_output_path, output_filename)
-                
-                if self._save_chapter_content(current_title, "\n\n".join(current_content), output_filepath):
-                    saved_any_file = True
-                    # 更新最后处理的章节信息
-                    self._last_chapter_info.update({
-                        'index': chapter_index,
-                        'title': current_title,
-                        'path': output_filepath,
-                        'pending_content': None
-                    })
+                # 处理每个标题和其后的内容
+                for i in range(len(matches)):
+                    current_match = matches[i]
+                    next_match = matches[i + 1] if i + 1 < len(matches) else None
+                    
+                    # 使用匹配的标题作为章节标题
+                    raw_ics_title = current_match.group(0).strip()
+                    cleaned_ics_title = self._get_cleaned_title(raw_ics_title)
+                    
+                    # 获取内容（从当前标题后到下一个标题前）
+                    content_start = current_match.end()
+                    content_end = next_match.start() if next_match else len(full_content_block)
+                    content = full_content_block[content_start:content_end].strip()
+                    
+                    if cleaned_ics_title and content:
+                        ics_sub_chapter_counter += 1
+                        clean_title_for_file = self._clean_filename(cleaned_ics_title)
+                        output_filename = f"{chapter_index:04d}_ics_{ics_sub_chapter_counter:03d}_{clean_title_for_file}.txt"
+                        output_filepath = os.path.join(base_output_path, output_filename)
+                        
+                        if self._save_chapter_content(cleaned_ics_title, content, output_filepath):
+                            saved_any_file = True
+                            processed_by_in_content_splitting = True
+                            # 更新最后处理的章节信息
+                            self._last_chapter_info.update({
+                                'index': chapter_index,
+                                'title': cleaned_ics_title,
+                                'path': output_filepath,
+                                'pending_content': None
+                            })
+                    elif content:  # 如果只有内容没有标题
+                        if self._last_chapter_info['title'] and self._last_chapter_info['path']:
+                            # 将内容追加到上一章
+                            with open(self._last_chapter_info['path'], 'a', encoding='utf-8') as f:
+                                f.write(f"\n\n{content}")
+                            logger.info(f"将无标题内容合并到上一章: {self._last_chapter_info['title']}")
+                            saved_any_file = True
 
+                if processed_by_in_content_splitting:
+                    logger.info(f"章节 {chapter_index} - 内容内分割处理完成，共处理 {ics_sub_chapter_counter} 个子章节")
+                else:
+                    logger.warning(f"章节 {chapter_index} - 内容内分割未产生任何有效的子章节")
+                    
         # 2. 如果内容内分割未处理或未启用，则尝试解析器级别的章节切分
         if not processed_by_in_content_splitting and self.parser.splitting_enabled and self.parser.splitting_regex:
             logger.info(f"章节 {chapter_index} - 内容内分割未处理，尝试解析器级别切分，正则: {self.parser.splitting_regex_str}")

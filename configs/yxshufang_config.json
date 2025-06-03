@@ -29,11 +29,11 @@
     },
 
     "chapter_splitting_enabled": false, 
-    "chapter_splitting_regex": "^(\\d+[）)].*?)$",
+    "chapter_splitting_regex": "(?:第\\d+章\\s*:\\s*\\d+[）)]|[番外|序|尾声|间章|\\d+][）)]).*?$",
 
     "in_content_splitting": {
         "enabled": true,
-        "header_regex": "^(\\d+[）)].*?)$"
+        "header_regex": "(?:第\\d+章\\s*:\\s*\\d+[）)]|[番外|序|尾声|间章|\\d+][）)]).*?$"
     },
 
     "title_patterns": {

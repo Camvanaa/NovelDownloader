@@ -1,0 +1,19 @@
+{
+    "start_url": "https://www.yxshufang.com/book/BLMN.html",
+    "chapter_splitting_enabled": false,
+    "chapter_splitting_regex": "^(\\d+[）)].*?)$",
+    "in_content_splitting": {
+        "enabled": true,
+        "header_regex_list": [
+            "(^(?:第[一二三四五六七八九十百千零〇\\d]+章).*)$",
+            "^(\\d+[）)].*?)$",
+            "^(?:尾声|间章)[）)].*?$"
+        ],
+        "header_regex": null
+    },
+    "title_patterns": {
+        "remove_regex": "\\s*-\\s*\\d+k大章-|\\s*-\\s*\\d+k-|\\s*-\\s*\\d+w-|\\s*（双更合一）\\s*$|\\s*（冲级加更）\\s*$",
+        "prefix_chapter_pattern_for_filename": "^第[一二三四五六七八九十百千零〇\\d]+章[\\s:]*",
+        "volume_pattern_for_filename": "^第[一二三四五六七八九十百千零〇\\d]+卷[\\s:]*"
+    }
+} 
